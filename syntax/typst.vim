@@ -57,42 +57,6 @@ syntax region typstCodeStatement
     \ matchgroup=typstCodeStatementWord start=/\v(let|set|show|import|include)>-@!/ end=/\v%(;|$)/
     \ contains=@typstCode
 
-" Code > Constants {{{2
-syntax cluster typstCodeConstants
-    \ contains=typstCodeConstant
-            \ ,typstCodeNumberInteger
-            \ ,typstCodeNumberFloat
-            \ ,typstCodeNumberLength
-            \ ,typstCodeNumberAngle
-            \ ,typstCodeNumberRatio
-            \ ,typstCodeNumberFraction
-            \ ,typstCodeString
-syntax keyword typstCodeConstant
-    \ contained
-    \ none auto true false
-syntax match typstCodeNumberInteger
-    \ contained
-    \ /\v<\d+>/
-syntax match typstCodeNumberFloat
-    \ contained
-    \ /\v<\d+\.\d*>/
-syntax match typstCodeNumberLength
-    \ contained
-    \ /\v<\d+(\.\d*)?(pt|mm|cm|in|em)>/
-syntax match typstCodeNumberAngle
-    \ contained
-    \ /\v<\d+(\.\d*)?(deg|rad)>/
-syntax match typstCodeNumberRatio
-    \ contained
-    \ /\v<\d+(\.\d*)?\%/
-syntax match typstCodeNumberFraction
-    \ contained
-    \ /\v<\d+(\.\d*)?fr>/
-syntax region typstCodeString
-    \ contained
-    \ start=/"/ skip=/\v\\\\|\\"/ end=/"/
-    \ contains=@Spell
-
 " Code > Identifiers- {{{2
 syntax cluster typstCodeIdentifiers
     \ contains=typstCodeIdentifier
@@ -117,12 +81,51 @@ syntax match typstCodeFunctionArgument
     \ /\v%(%(\(.{-}\)|\[.{-}\]|\{.{-}\}))*/ transparent
     \ contains=@typstCode
 
+" Code > Constants {{{2
+syntax cluster typstCodeConstants
+    \ contains=typstCodeConstant
+            \ ,typstCodeNumberInteger
+            \ ,typstCodeNumberFloat
+            \ ,typstCodeNumberLength
+            \ ,typstCodeNumberAngle
+            \ ,typstCodeNumberRatio
+            \ ,typstCodeNumberFraction
+            \ ,typstCodeString
+syntax match typstCodeConstant
+    \ contained
+    \ /\v<%(none|auto|true|false)-@!>/ 
+syntax match typstCodeNumberInteger
+    \ contained
+    \ /\v<\d+>/
+
+syntax match typstCodeNumberFloat
+    \ contained
+    \ /\v<\d+\.\d*>/
+syntax match typstCodeNumberLength
+    \ contained
+    \ /\v<\d+(\.\d*)?(pt|mm|cm|in|em)>/
+syntax match typstCodeNumberAngle
+    \ contained
+    \ /\v<\d+(\.\d*)?(deg|rad)>/
+syntax match typstCodeNumberRatio
+    \ contained
+    \ /\v<\d+(\.\d*)?\%/
+syntax match typstCodeNumberFraction
+    \ contained
+    \ /\v<\d+(\.\d*)?fr>/
+syntax region typstCodeString
+    \ contained
+    \ start=/"/ skip=/\v\\\\|\\"/ end=/"/
+    \ contains=@Spell
+
 " Code > Parens {{{2
 syntax cluster typstCodeParens
     \ contains=typstCodeParen
             \ ,typstCodeBrace
             \ ,typstCodeBracket
             \ ,typstCodeDollar
+            \ ,typstMarkupRawInline
+            \ ,typstMarkupRawBlock
 syntax region typstCodeParen
     \ contained
     \ matchgroup=Noise start=/\v\(/ end=/\v\)/
@@ -249,8 +252,26 @@ syntax cluster typstMarkupText
 
 syntax match typstMarkupRawInline
     \ /`.\{-}`/
-syntax region typstMarkupRawBlock
-    \ start=/```/ end=/```/
+
+syntax region typstMarkupRawBlock 
+    \ matchgroup=Macro start=/```\w*/ 
+    \ matchgroup=Macro end=/```/ keepend
+syntax region typstCodeBlock
+    \ matchgroup=Macro start=/```typst/
+    \ matchgroup=Macro end=/```/ contains=@typstCode keepend
+syntax include @C syntax/c.vim
+syntax region typstMarkupCCodeBlock
+    \ matchgroup=Macro start=/```c\>/
+    \ matchgroup=Macro end=/```/ contains=@C keepend
+syntax include @CPP syntax/cpp.vim
+syntax region typstMarkupCPPCodeBlock 
+    \ matchgroup=Macro start=/```cpp/
+    \ matchgroup=Macro end=/```/ contains=@CPP keepend
+syntax include @Python syntax/python.vim
+syntax region typstMarkupPythonCodeBlock 
+    \ matchgroup=Macro start=/```python/
+    \ matchgroup=Macro end=/```/ contains=@Python keepend
+
 syntax match typstMarkupLabel
     \ /\v\<\K%(\k*-*)*\>/
 syntax match typstMarkupReference
@@ -259,17 +280,23 @@ syntax match typstMarkupUrl
     \ /http[s]\?:\/\/[[:alnum:]%\/_#.-]*/
 syntax match typstMarkupHeading
     \ /^\s*\zs=\{1,6}\s.*$/
-    \ contains=typstMarkupLabel
+    \ contains=typstMarkupLabel,@Spell
 syntax match typstMarkupBulletList
     \ /\v^\s*-\s+/
 syntax match typstMarkupEnumList
     \ /\v^\s*(\+|\d+\.)\s+/
-syn region typstMarkupItalic
-    \ matchgroup=typstMarkupItalicDelimiter start=/\w\@<!_\S\@=/ skip=/\\_/ end=/\S\@<=_\w\@!\|^$/
-    \ concealends contains=typstMarkupLabel,typstMarkupBold
-syn region typstMarkupBold
+syntax match typstMarkupItalicError
+    \ /\v(\w|\\)@<!_\S@=.*/
+syntax match typstMarkupItalic
+    \ /\v(\w|\\)@<!_\S@=.*(\n.+)*\S@<=\\@<!_/
+    \ contains=typstMarkupItalicRegion
+syntax region typstMarkupItalicRegion
+    \ contained
+    \ matchgroup=typstMarkupItalicDelimiter start=/_/ skip=/\\\@<=_/ end=/_/
+    \ concealends contains=typstMarkupLabel,typstMarkupBold,@Spell
+syntax region typstMarkupBold
     \ matchgroup=typstMarkupBoldDelimiter start=/\*\S\@=/ skip=/\\\*/ end=/\S\@<=\*\|^$/
-    \ concealends contains=typstMarkupLabel,typstMarkupItalic
+    \ concealends contains=typstMarkupLabel,typstMarkupItalic,@Spell
 syntax match typstMarkupLinebreak
     \ /\\\\/
 syntax match typstMarkupNonbreakingSpace
@@ -287,7 +314,7 @@ syntax match typstMarkupTermList
 syntax cluster typstMarkupParens
     \ contains=typstMarkupDollar
 syntax region typstMarkupDollar
-    \ matchgroup=Number start=/\$/ end=/\$/
+    \ matchgroup=Special start=/\$/ skip=/\\\$/ end=/\$/
     \ contains=@typstMath
 
 
@@ -295,7 +322,21 @@ syntax region typstMarkupDollar
 syntax cluster typstMath
     \ contains=@typstCommon
             \ ,@typstHashtag
+            \ ,typstMathFunction
+            \ ,typstMathNumber
+            \ ,typstMathSymbol
 
+syntax match typstMathFunction
+    \ /\<\v\zs\a\w+\ze\(/
+    \ contained
+syntax match typstMathNumber
+    \ /\<\d\+\>/
+    \ contained
+
+" Math > Linked groups {{{2
+highlight default link typstMathFunction            Statement
+highlight default link typstMathNumber              Number
+highlight default link typstMathSymbol              Statement
 
 " Highlighting {{{1
 
@@ -340,6 +381,7 @@ highlight default link typstMarkupRawBlock          Macro
 highlight default link typstMarkupLabel             Structure
 highlight default link typstMarkupReference         Structure
 highlight default link typstMarkupBulletList        Structure
+highlight default link typstMarkupItalicError       Error
 highlight default link typstMarkupEnumList          Structure
 highlight default link typstMarkupLinebreak         Structure
 highlight default link typstMarkupNonbreakingSpace  Structure
@@ -353,7 +395,7 @@ highlight default link typstMarkupDollar            Noise
 highlight default typstMarkupHeading                    term=underline,bold     cterm=underline,bold    gui=underline,bold
 highlight default typstMarkupUrl                        term=underline          cterm=underline         gui=underline
 highlight default typstMarkupBold                       term=bold               cterm=bold              gui=bold
-highlight default typstMarkupItalic                     term=italic             cterm=italic            gui=italic
+highlight default typstMarkupItalicRegion               term=italic             cterm=italic            gui=italic
 
 highlight default link typstMarkupBoldDelimiter         typstMarkupBold
 highlight default link typstMarkupItalicDelimiter       typstMarkupItalic
