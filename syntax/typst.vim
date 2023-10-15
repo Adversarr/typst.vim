@@ -160,9 +160,9 @@ syntax cluster typstHashtagKeywords
             \ ,typstHashtagStatement
 
 syntax match typstHashtagControlFlowError
-    \ /\v#%(if|while|for)>-@!.{-}$\_.{-}%(\{|\[)/
+    \ /\v#%(if|while|for)>-@!.{-}$\_.{-}%(\{|\[|\()/
 syntax match typstHashtagControlFlow
-    \ /\v#%(if|while|for)>-@!.{-}\ze%(\{|\[)/
+    \ /\v#%(if|while|for)>-@!.{-}\ze%(\{|\[|\()/
     \ contains=typstHashtagConditional,typstHashtagRepeat 
     \ nextgroup=@typstCode
 syntax region typstHashtagConditional
@@ -277,7 +277,7 @@ syntax match typstMarkupLabel
 syntax match typstMarkupReference
     \ /\v\@\K%(\k*-*)*/
 syntax match typstMarkupUrl
-    \ /http[s]\?:\/\/[[:alnum:]%\/_#.-]*/
+    \ #\v\w+://\S*#
 syntax match typstMarkupHeading
     \ /^\s*\zs=\{1,6}\s.*$/
     \ contains=typstMarkupLabel,@Spell
@@ -286,17 +286,25 @@ syntax match typstMarkupBulletList
 syntax match typstMarkupEnumList
     \ /\v^\s*(\+|\d+\.)\s+/
 syntax match typstMarkupItalicError
-    \ /\v(\w|\\)@<!_\S@=.*/
+    \ /\v(\w|\\)@<!_\S@=.*|.*\S@<=\\@<!_/
 syntax match typstMarkupItalic
     \ /\v(\w|\\)@<!_\S@=.*(\n.+)*\S@<=\\@<!_/
     \ contains=typstMarkupItalicRegion
 syntax region typstMarkupItalicRegion
     \ contained
-    \ matchgroup=typstMarkupItalicDelimiter start=/_/ skip=/\\\@<=_/ end=/_/
+    \ matchgroup=typstMarkupItalicDelimiter 
+    \ start=/\(^\|[^0-9a-zA-Z]\)\@<=_/ end=/_\($\|[^0-9a-zA-Z]\)\@=/
     \ concealends contains=typstMarkupLabel,typstMarkupBold,@Spell
-syntax region typstMarkupBold
-    \ matchgroup=typstMarkupBoldDelimiter start=/\*\S\@=/ skip=/\\\*/ end=/\S\@<=\*\|^$/
-    \ concealends contains=typstMarkupLabel,typstMarkupItalic,@Spell
+syntax match typstMarkupBoldError
+    \ /\v(\w|\\)@<!\*\S@=.*|.*\S@<=\\@<!\*/
+syntax match typstMarkupBold
+    \ /\v(\w|\\)@<!\*\S@=.*(\n.+)*\S@<=\\@<!\*/
+    \ contains=typstMarkupBoldRegion
+syntax region typstMarkupBoldRegion
+    \ contained
+    \ matchgroup=typstMarkupBoldDelimiter 
+    \ start=/\(^\|[^0-9a-zA-Z]\)\@<=\*/ end=/\*\($\|[^0-9a-zA-Z]\)\@=/
+    \ concealends contains=typstMarkupLabel,typstMarkupBold,@Spell
 syntax match typstMarkupLinebreak
     \ /\\\\/
 syntax match typstMarkupNonbreakingSpace
@@ -382,6 +390,7 @@ highlight default link typstMarkupLabel             Structure
 highlight default link typstMarkupReference         Structure
 highlight default link typstMarkupBulletList        Structure
 highlight default link typstMarkupItalicError       Error
+highlight default link typstMarkupBoldError       Error
 highlight default link typstMarkupEnumList          Structure
 highlight default link typstMarkupLinebreak         Structure
 highlight default link typstMarkupNonbreakingSpace  Structure
