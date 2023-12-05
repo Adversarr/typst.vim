@@ -7,13 +7,20 @@ if !exists('g:typst_cmd')
     let g:typst_cmd = "typst"
 endif
 
-
 if !exists('g:typst_pdf_viewer')
     let g:typst_pdf_viewer =  ""
 endif
 
+if !exists('g:typst_conceal_math')
+    let g:typst_conceal_math = 0
+endif
+
 if !exists('g:typst_auto_close_toc')
     let g:typst_auto_close_toc =  0
+endif
+
+if !exists('g:typst_auto_open_quickfix')
+    let g:typst_auto_open_quickfix = 1
 endif
 
 let b:did_ftplugin = 1
@@ -22,8 +29,9 @@ let s:cpo_orig = &cpo
 set cpo&vim
 
 compiler typst
-"Workaround for https://github.com/typst/typst/issues/1937
-set errorformat^=\/%f:%l:%c:%m
+
+" " If you're on typst <v0.8, workaround for https://github.com/typst/typst/issues/1937
+" set errorformat^=\/%f:%l:%c:%m
 
 setlocal expandtab
 setlocal tabstop=8
@@ -34,6 +42,7 @@ setlocal commentstring=//%s
 setlocal comments=s1:/*,mb:*,ex:*/,://
 
 setlocal formatoptions+=croq
+setlocal iskeyword=a-z,A-Z,48-57,_,-
 
 setlocal suffixesadd=.typ
 

@@ -128,19 +128,19 @@ syntax cluster typstCodeParens
             \ ,typstMarkupRawBlock
 syntax region typstCodeParen
     \ contained
-    \ matchgroup=Noise start=/\v\(/ end=/\v\)/
+    \ matchgroup=Noise start=/(/ end=/)/
     \ contains=@typstCode
 syntax region typstCodeBrace
     \ contained
-    \ matchgroup=Noise start=/\v\{/ end=/\v\}/
+    \ matchgroup=Noise start=/{/ end=/}/
     \ contains=@typstCode
 syntax region typstCodeBracket
     \ contained
-    \ matchgroup=Noise start=/\v\[/ end=/\v\]/
+    \ matchgroup=Noise start=/\[/ end=/\]/
     \ contains=@typstMarkup
 syntax region typstCodeDollar
     \ contained
-    \ matchgroup=Number start=/\v\$/ end=/\v\$/
+    \ matchgroup=Number start=/\$/ end=/\$/
     \ contains=@typstMath
 
 
@@ -210,16 +210,16 @@ syntax cluster typstHashtagParens
             \ ,typstHashtagBracket
             \ ,typstHashtagDollar
 syntax region typstHashtagParen
-    \ matchgroup=Noise start=/\v\#\(/ end=/\v\)/
+    \ matchgroup=Noise start=/#(/ end=/)/
     \ contains=@typstCode
 syntax region typstHashtagBrace
-    \ matchgroup=Noise start=/\v\#\{/ end=/\v\}/
+    \ matchgroup=Noise start=/#{/ end=/}/
     \ contains=@typstCode
 syntax region typstHashtagBracket
-    \ matchgroup=Noise start=/\v\#\[/ end=/\v\]/
+    \ matchgroup=Noise start=/#\[/ end=/\]/
     \ contains=@typstMarkup
 syntax region typstHashtagDollar
-    \ matchgroup=Noise start=/\v\#\$/ end=/\v\$/
+    \ matchgroup=Noise start=/#\$/ end=/\$/
     \ contains=@typstMath
 
 
@@ -288,7 +288,7 @@ syntax match typstMarkupEnumList
 " syntax match typstMarkupItalicError
 "     \ /\v(\w|\\)@<!_\S@=.*|.*\S@<=\\@<!_/
 syntax match typstMarkupItalic
-    \ /\v(\w|\\)@<!_\S@=.*(\n.+)*\S@<=\\@<!_/
+    \ /\v(\w|\\)@1<!_\S@=.{-}(\n.{-1,})*\S@1<=\\@1<!_/
     \ contains=typstMarkupItalicRegion
 syntax region typstMarkupItalicRegion
     \ contained
@@ -298,7 +298,7 @@ syntax region typstMarkupItalicRegion
 " syntax match typstMarkupBoldError
 "     \ /\v(\w|\\)@<!\*\S@=.*|.*\S@<=\\@<!\*/
 syntax match typstMarkupBold
-    \ /\v(\w|\\)@<!\*\S@=.*(\n.+)*\S@<=\\@<!\*/
+    \ /\v(\w|\\)@1<!\*\S@=.{-}(\n.{-1,})*\S@1<=\\@1<!\*/
     \ contains=typstMarkupBoldRegion
 syntax region typstMarkupBoldRegion
     \ contained
@@ -320,7 +320,11 @@ syntax match typstMarkupTermList
 
 " Markup > Parens {{{2
 syntax cluster typstMarkupParens
-    \ contains=typstMarkupDollar
+    \ contains=typstMarkupBracket
+            \ ,typstMarkupDollar
+syntax region typstMarkupBracket
+    \ matchgroup=Noise start=/\[/ end=/\]/
+    \ contains=@typstMarkup
 syntax region typstMarkupDollar
     \ matchgroup=Special start=/\$/ skip=/\\\$/ end=/\$/
     \ contains=@typstMath
@@ -333,6 +337,9 @@ syntax cluster typstMath
             \ ,typstMathFunction
             \ ,typstMathNumber
             \ ,typstMathSymbol
+            \ ,typstMathBold
+            \ ,typstMathScripts
+            \ ,typstMathQuote
 
 syntax match typstMathFunction
     \ /\<\v\zs\a\w+\ze\(/
@@ -340,7 +347,13 @@ syntax match typstMathFunction
 syntax match typstMathNumber
     \ /\<\d\+\>/
     \ contained
-runtime! syntax/typst-symbols.vim
+syntax region typstMathQuote
+    \ matchgroup=String start=/"/ skip=/\\"/ end=/"/
+    \ contained
+
+if g:typst_conceal_math
+    runtime! syntax/typst-symbols.vim
+endif
 
 
 " Math > Linked groups {{{2
@@ -407,7 +420,7 @@ highlight! Conceal ctermfg=NONE ctermbg=NONE guifg=NONE guibg=NONE
 
 highlight default typstMarkupHeading                    term=underline,bold     cterm=underline,bold    gui=underline,bold
 highlight default typstMarkupUrl                        term=underline          cterm=underline         gui=underline
-highlight default typstMarkupBold                       term=bold               cterm=bold              gui=bold
+highlight default typstMarkupBoldRegion                 term=bold               cterm=bold              gui=bold
 highlight default typstMarkupItalicRegion               term=italic             cterm=italic            gui=italic
 
 highlight default link typstMarkupBoldDelimiter         typstMarkupBold
