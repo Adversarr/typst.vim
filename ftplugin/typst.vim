@@ -3,25 +3,20 @@ if exists("b:did_ftplugin")
   finish
 endif
 
-if !exists('g:typst_cmd')
-    let g:typst_cmd = "typst"
-endif
+function! s:declare_option(option, value)
+    if !exists('g:'..a:option)
+        exec 'let g:'..a:option..' = '..string(a:value)
+    endif
+endfunction
 
-if !exists('g:typst_pdf_viewer')
-    let g:typst_pdf_viewer =  ""
-endif
-
-if !exists('g:typst_conceal_math')
-    let g:typst_conceal_math = 0
-endif
-
-if !exists('g:typst_auto_close_toc')
-    let g:typst_auto_close_toc =  0
-endif
-
-if !exists('g:typst_auto_open_quickfix')
-    let g:typst_auto_open_quickfix = 1
-endif
+call s:declare_option('typst_cmd', 'typst')
+call s:declare_option('typst_pdf_viewer', '')
+call s:declare_option('typst_conceal', 0)
+call s:declare_option('typst_conceal_math', g:typst_conceal)
+call s:declare_option('typst_conceal_emoji', g:typst_conceal)
+call s:declare_option('typst_auto_close_toc', 0)
+call s:declare_option('typst_auto_open_quickfix', 1)
+call s:declare_option('typst_embedded_languages', [])
 
 let b:did_ftplugin = 1
 
@@ -37,6 +32,10 @@ setlocal expandtab
 setlocal tabstop=8
 setlocal softtabstop=2
 setlocal shiftwidth=2
+
+if g:typst_conceal
+    setlocal conceallevel=2
+endif
 
 setlocal commentstring=//%s
 setlocal comments=s1:/*,mb:*,ex:*/,://

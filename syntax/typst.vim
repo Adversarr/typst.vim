@@ -1,7 +1,6 @@
 " Vim syntax file
 " Language: Typst
 " Maintainer: Kaj Munhoz Arfvidsson
-" Latest Revision: Apr 2023
 
 if exists("b:current_syntax")
   finish
@@ -54,19 +53,31 @@ syntax keyword typstCodeKeyword
     \ not in and or return
 syntax region typstCodeStatement
     \ contained
-    \ matchgroup=typstCodeStatementWord start=/\v(let|set|show|import|include)>-@!/ end=/\v%(;|$)/
+    \ matchgroup=typstCodeStatementWord start=/\v(let|set|import|include)>/
+    \ matchgroup=Noise end=/\v%(;|$)/
     \ contains=@typstCode
+syntax region typstCodeStatement
+    \ contained
+    \ matchgroup=typstCodeStatementWord start=/show/
+    \ matchgroup=Noise end=/\v%(:|$)/ keepend
+    \ contains=@typstCode
+    \ skipwhite nextgroup=@typstCode,typstCodeShowRocket
+syntax match typstCodeShowRocket
+    \ contained
+    \ /.*=>/
+    \ contains=@typstCode
+    \ skipwhite nextgroup=@typstCode
 
-" Code > Identifiers- {{{2
+" Code > Identifiers {{{2
 syntax cluster typstCodeIdentifiers
     \ contains=typstCodeIdentifier
             \ ,typstCodeFieldAccess
 syntax match typstCodeIdentifier
     \ contained
-    \ /\v\K\k*%(-+\k+)*>-@!(<%(let|set|show|import|include))@<![\.\[\(]@!/
+    \ /\v\w\k*>(<%(let|set|show|import|include))@<![\.\[\(]@!/
 syntax match typstCodeFieldAccess
     \ contained
-    \ /\v\K\k*%(-+\k+)*>-@!(<%(let|set|show|import|include))@<!\.[\[\(]@!/
+    \ /\v\w\k*>(<%(let|set|show|import|include))@<!\.[\[\(]@!/
     \ nextgroup=typstCodeFieldAccess,typstCodeFunction
 
 " Code > Functions {{{2
@@ -74,7 +85,7 @@ syntax cluster typstCodeFunctions
     \ contains=typstCodeFunction
 syntax match typstCodeFunction
     \ contained
-    \ /\v\K\k*%(-+\k+)*[\(\[]@=/
+    \ /\v\w\k*>(<%(let|set|show|import|include))@<![\(\[]@=/
     \ nextgroup=typstCodeFunctionArgument
 syntax match typstCodeFunctionArgument
     \ contained
@@ -93,7 +104,7 @@ syntax cluster typstCodeConstants
             \ ,typstCodeString
 syntax match typstCodeConstant
     \ contained
-    \ /\v<%(none|auto|true|false)-@!>/ 
+    \ /\v<%(none|auto|true|false)-@!>/
 syntax match typstCodeNumberInteger
     \ contained
     \ /\v<\d+>/
@@ -162,45 +173,56 @@ syntax cluster typstHashtagKeywords
 " syntax match typstHashtagControlFlowError
 "     \ /\v#%(if|while|for)>-@!.{-}$\_.{-}%(\{|\[|\()/
 syntax match typstHashtagControlFlow
-    \ /\v#%(if|while|for)>-@!.{-}\ze%(\{|\[|\()/
-    \ contains=typstHashtagConditional,typstHashtagRepeat 
+    \ /\v#%(if|while|for)>.{-}\ze%(\{|\[|\()/
+    \ contains=typstHashtagConditional,typstHashtagRepeat
     \ nextgroup=@typstCode
 syntax region typstHashtagConditional
     \ contained
-    \ start=/\v#if>-@!/ end=/\v\ze(\{|\[)/
+    \ start=/\v#if>/ end=/\v\ze(\{|\[)/
     \ contains=@typstCode
 syntax region typstHashtagRepeat
     \ contained
-    \ start=/\v#(while|for)>-@!/ end=/\v\ze(\{|\[)/
+    \ start=/\v#(while|for)>/ end=/\v\ze(\{|\[)/
     \ contains=@typstCode
 syntax match typstHashtagKeyword
-    \ /\v#(return)>-@!/
+    \ /\v#(return)>/
     \ skipwhite nextgroup=@typstCode
 syntax region typstHashtagStatement
-    \ matchgroup=typstHashtagStatementWord start=/\v#(let|set|show|import|include)>-@!/ end=/\v%(;|$)/
+    \ matchgroup=typstHashtagStatementWord start=/\v#(let|set|import|include)>/
+    \ matchgroup=Noise end=/\v%(;|$)/
     \ contains=@typstCode
+syntax region typstHashtagStatement
+    \ matchgroup=typstHashtagStatementWord start=/#show/
+    \ matchgroup=Noise end=/\v%(:|$)/ keepend
+    \ contains=@typstCode
+    \ skipwhite nextgroup=@typstCode,typstCodeShowRocket
 
 " Hashtag > Constants {{{2
 syntax cluster typstHashtagConstants
     \ contains=typstHashtagConstant
 syntax match typstHashtagConstant
-    \ /\v#(none|auto|true|false)>-@!/
+    \ /\v#(none|auto|true|false)>/
 
 " Hashtag > Identifiers {{{2
 syntax cluster typstHashtagIdentifiers
     \ contains=typstHashtagIdentifier
             \ ,typstHashtagFieldAccess
 syntax match typstHashtagIdentifier
-    \ /\v#\K\k*%(-+\k+)*>-@!(<%(let|set|show|import|include|if|while|for|return))@<![\.\[\(]@!/
+    \ /\v#\w\k*>(<%(let|set|show|import|include))@<![\.\[\(]@!/
 syntax match typstHashtagFieldAccess
-    \ /\v#\K\k*%(-+\k+)*>-@!(<%(let|set|show|import|include|if|while|for|return))@<!\.[\[\(]@!/
+    \ /\v#\w\k*>(<%(let|set|show|import|include))@<!\.[\[\(]@!/
     \ nextgroup=typstCodeFieldAccess,typstCodeFunction
+
+if g:typst_conceal_emoji
+    runtime! syntax/typst-emoji.vim
+endif
+
 
 " Hashtag > Functions {{{2
 syntax cluster typstHashtagFunctions
     \ contains=typstHashtagFunction
 syntax match typstHashtagFunction
-    \ /\v#\K\k*%(-+\k+)*[\(\[]@=/
+    \ /\v#\w\k*>(<%(let|set|show|import|include))@<![\(\[]@=/
     \ nextgroup=typstCodeFunctionArgument
 
 " Hashtag > Parens {{{2
@@ -253,24 +275,20 @@ syntax cluster typstMarkupText
 syntax match typstMarkupRawInline
     \ /`.\{-}`/
 
-syntax region typstMarkupRawBlock 
-    \ matchgroup=Macro start=/```\w*/ 
+syntax region typstMarkupRawBlock
+    \ matchgroup=Macro start=/```\w*/
     \ matchgroup=Macro end=/```/ keepend
-syntax region typstCodeBlock
-    \ matchgroup=Macro start=/```typst/
-    \ matchgroup=Macro end=/```/ contains=@typstCode keepend
-syntax include @C syntax/c.vim
-syntax region typstMarkupCCodeBlock
-    \ matchgroup=Macro start=/```c\>/
-    \ matchgroup=Macro end=/```/ contains=@C keepend
-syntax include @CPP syntax/cpp.vim
-syntax region typstMarkupCPPCodeBlock 
-    \ matchgroup=Macro start=/```cpp/
-    \ matchgroup=Macro end=/```/ contains=@CPP keepend
-syntax include @Python syntax/python.vim
-syntax region typstMarkupPythonCodeBlock 
-    \ matchgroup=Macro start=/```python/
-    \ matchgroup=Macro end=/```/ contains=@Python keepend
+if g:typst_conceal
+    syntax region typstMarkupCodeBlockTypst
+        \ matchgroup=Macro start=/```typst/
+        \ matchgroup=Macro end=/```/ contains=@typstCode keepend
+        \ concealends
+else
+    syntax region typstMarkupCodeBlockTypst
+        \ matchgroup=Macro start=/```typst/
+        \ matchgroup=Macro end=/```/ contains=@typstCode keepend
+endif
+runtime! syntax/typst-embedded.vim
 
 syntax match typstMarkupLabel
     \ /\v\<\K%(\k*-*)*\>/
@@ -290,21 +308,37 @@ syntax match typstMarkupEnumList
 syntax match typstMarkupItalic
     \ /\v(\w|\\)@1<!_\S@=.{-}(\n.{-1,})*\S@1<=\\@1<!_/
     \ contains=typstMarkupItalicRegion
-syntax region typstMarkupItalicRegion
-    \ contained
-    \ matchgroup=typstMarkupItalicDelimiter 
-    \ start=/\(^\|[^0-9a-zA-Z]\)\@<=_/ end=/_\($\|[^0-9a-zA-Z]\)\@=/
-    \ concealends contains=typstMarkupLabel,typstMarkupBold,@Spell
+if g:typst_conceal
+    syntax region typstMarkupItalicRegion
+        \ contained
+        \ matchgroup=typstMarkupItalicDelimiter
+        \ start=/\(^\|[^0-9a-zA-Z]\)\@<=_/ end=/_\($\|[^0-9a-zA-Z]\)\@=/
+        \ concealends contains=typstMarkupLabel,typstMarkupBold,@Spell
+else
+    syntax region typstMarkupItalicRegion
+        \ contained
+        \ matchgroup=typstMarkupItalicDelimiter
+        \ start=/\(^\|[^0-9a-zA-Z]\)\@<=_/ end=/_\($\|[^0-9a-zA-Z]\)\@=/
+        \ contains=typstMarkupLabel,typstMarkupBold,@Spell
+endif
 " syntax match typstMarkupBoldError
 "     \ /\v(\w|\\)@<!\*\S@=.*|.*\S@<=\\@<!\*/
 syntax match typstMarkupBold
     \ /\v(\w|\\)@1<!\*\S@=.{-}(\n.{-1,})*\S@1<=\\@1<!\*/
     \ contains=typstMarkupBoldRegion
-syntax region typstMarkupBoldRegion
-    \ contained
-    \ matchgroup=typstMarkupBoldDelimiter 
-    \ start=/\(^\|[^0-9a-zA-Z]\)\@<=\*/ end=/\*\($\|[^0-9a-zA-Z]\)\@=/
-    \ concealends contains=typstMarkupLabel,typstMarkupBold,@Spell
+if g:typst_conceal
+    syntax region typstMarkupBoldRegion
+        \ contained
+        \ matchgroup=typstMarkupBoldDelimiter
+        \ start=/\(^\|[^0-9a-zA-Z]\)\@<=\*/ end=/\*\($\|[^0-9a-zA-Z]\)\@=/
+        \ concealends contains=typstMarkupLabel,typstMarkupBold,@Spell
+else
+    syntax region typstMarkupBoldRegion
+        \ contained
+        \ matchgroup=typstMarkupBoldDelimiter
+        \ start=/\(^\|[^0-9a-zA-Z]\)\@<=\*/ end=/\*\($\|[^0-9a-zA-Z]\)\@=/
+        \ contains=typstMarkupLabel,typstMarkupBold,@Spell
+endif
 syntax match typstMarkupLinebreak
     \ /\\\\/
 syntax match typstMarkupNonbreakingSpace
@@ -334,6 +368,7 @@ syntax region typstMarkupDollar
 syntax cluster typstMath
     \ contains=@typstCommon
             \ ,@typstHashtag
+            \ ,typstMathIdentifier
             \ ,typstMathFunction
             \ ,typstMathNumber
             \ ,typstMathSymbol
@@ -341,8 +376,11 @@ syntax cluster typstMath
             \ ,typstMathScripts
             \ ,typstMathQuote
 
+syntax match typstMathIdentifier
+    \ /\a\a\+/
+    \ contained
 syntax match typstMathFunction
-    \ /\<\v\zs\a\w+\ze\(/
+    \ /\a\a\+\ze(/
     \ contained
 syntax match typstMathNumber
     \ /\<\d\+\>/
@@ -357,6 +395,7 @@ endif
 
 
 " Math > Linked groups {{{2
+highlight default link typstMathIdentifier          Identifier
 highlight default link typstMathFunction            Statement
 highlight default link typstMathNumber              Number
 highlight default link typstMathSymbol              Statement
@@ -430,4 +469,4 @@ highlight default link typstMarkupItalicDelimiter       typstMarkupItalic
 
 let b:current_syntax = "typst"
 
-" vim: foldlevel=0 tabstop=8 shiftwidth=4 softtabstop=4 expandtab
+" vim: foldmethod=marker foldlevel=0 tabstop=8 shiftwidth=4 softtabstop=4 expandtab
